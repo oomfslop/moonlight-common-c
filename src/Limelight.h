@@ -1006,6 +1006,13 @@ typedef struct _SS_HDR_METADATA {
 // function when HDR mode is active on the host. This is a Sunshine protocol extension.
 bool LiGetHdrMetadata(PSS_HDR_METADATA metadata);
 
+// This function asks an Apollo host to execute the server command at the given index
+// in the host's configured server command list (as advertised in the ServerCommand
+// elements of the serverinfo response). This is an Apollo protocol extension and
+// requires that the client has been granted the server command permission.
+// Returns false if the host does not support this feature.
+bool LiSendExecServerCmd(uint8_t cmdId);
+
 // This function requests an IDR frame from the host. Typically this is done using DR_NEED_IDR, but clients
 // processing frames asynchronously may need to reset their decoder state even after returning DR_OK for
 // the prior frame. Rather than wait for a new frame and return DR_NEED_IDR for that one, they can just
