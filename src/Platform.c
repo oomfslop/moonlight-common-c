@@ -2,6 +2,9 @@
 #include "Limelight-internal.h"
 #if defined(__vita__)
 #include <pthread.h>
+#if defined(LC_DARWIN)
+#include <pthread/qos.h>
+#endif
 #include <psp2/kernel/processmgr.h>
 #endif
 
@@ -87,6 +90,9 @@ void* ThreadProc(void* context) {
     pthread_setname_np(pthread_self(), ctx->name);
 #elif defined(LC_DARWIN)
     pthread_setname_np(ctx->name);
+    // Every common-c thread sits on the latency path (receive, depacketize,
+    // control). Ask for user-interactive QoS so they stay on performance cores.
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
 #endif
 
     ctx->entry(ctx->context);
