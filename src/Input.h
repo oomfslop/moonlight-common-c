@@ -210,6 +210,7 @@ typedef struct _SS_TRACKPAD_PACKET {
     netfloat width;  // the touchpad's physical size, in millimeters
     netfloat height;
     SS_TRACKPAD_CONTACT contacts[SS_TRACKPAD_MAX_CONTACTS];
+    uint32_t timestamp; // when the fingers were there, client milliseconds (any base)
 } SS_TRACKPAD_PACKET, *PSS_TRACKPAD_PACKET;
 
 #pragma pack(pop)

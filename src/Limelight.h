@@ -664,6 +664,8 @@ int LiSendTouchEvent(uint8_t eventType, uint32_t pointerId, float x, float y, fl
 // scrolling and zooming exactly as from its own touchpad: one frame with every contact at once,
 // whenever any of them moves, arrives or lifts. Positions are 0..1 across and down the touchpad,
 // width and height its physical size in millimeters. A frame with no contacts lifts them all.
+// timestampMs is when the fingers were there (milliseconds, any base): the host times the
+// frames by it, so the speed of a flick (and the inertia after it) survives network jitter.
 //
 // To determine if LiSendTrackpadEvent() is supported without calling it, call LiGetHostFeatureFlags()
 // and check for the LI_FF_TRACKPAD_EVENTS flag.
@@ -673,7 +675,7 @@ typedef struct _LI_TRACKPAD_CONTACT {
     float y;
 } LI_TRACKPAD_CONTACT;
 #define LI_TRACKPAD_MAX_CONTACTS 5
-int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contacts, float width, float height);
+int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contacts, float width, float height, uint32_t timestampMs);
 
 // This function is similar to LiSendTouchEvent() but allows additional parameters relevant for pen
 // input, including tilt and buttons. Tilt is in degrees from vertical in Z dimension (perpendicular

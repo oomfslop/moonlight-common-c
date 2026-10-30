@@ -1419,7 +1419,7 @@ int LiSendTouchEvent(uint8_t eventType, uint32_t pointerId, float x, float y, fl
     return err;
 }
 
-int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contacts, float width, float height) {
+int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contacts, float width, float height, uint32_t timestampMs) {
     static uint8_t lastCount;
     PPACKET_HOLDER holder;
     int err;
@@ -1455,6 +1455,7 @@ int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contact
     holder->packet.trackpad.contactCount = contactCount;
     floatToNetfloat(width, holder->packet.trackpad.width);
     floatToNetfloat(height, holder->packet.trackpad.height);
+    holder->packet.trackpad.timestamp = LE32(timestampMs);
     for (uint8_t i = 0; i < contactCount; i++) {
         holder->packet.trackpad.contacts[i].contactId = LE32(contacts[i].contactId);
         floatToNetfloat(contacts[i].x, holder->packet.trackpad.contacts[i].x);
