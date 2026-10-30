@@ -660,6 +660,21 @@ int LiSendMouseMoveAsMousePositionEvent(short deltaX, short deltaY, short refere
 int LiSendTouchEvent(uint8_t eventType, uint32_t pointerId, float x, float y, float pressureOrDistance,
                      float contactAreaMajor, float contactAreaMinor, uint16_t rotation);
 
+// This function sends the fingers on a precision touchpad (a trackpad), for the host to recognize
+// scrolling and zooming exactly as from its own touchpad: one frame with every contact at once,
+// whenever any of them moves, arrives or lifts. Positions are 0..1 across and down the touchpad,
+// width and height its physical size in millimeters. A frame with no contacts lifts them all.
+//
+// To determine if LiSendTrackpadEvent() is supported without calling it, call LiGetHostFeatureFlags()
+// and check for the LI_FF_TRACKPAD_EVENTS flag.
+typedef struct _LI_TRACKPAD_CONTACT {
+    uint32_t contactId;
+    float x;
+    float y;
+} LI_TRACKPAD_CONTACT;
+#define LI_TRACKPAD_MAX_CONTACTS 5
+int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contacts, float width, float height);
+
 // This function is similar to LiSendTouchEvent() but allows additional parameters relevant for pen
 // input, including tilt and buttons. Tilt is in degrees from vertical in Z dimension (perpendicular
 // to screen, 0..90). See LiSendTouchEvent() for detailed documentation on other parameters.
@@ -1023,6 +1038,7 @@ void LiRequestIdrFrame(void);
 // This function returns any extended feature flags supported by the host.
 #define LI_FF_PEN_TOUCH_EVENTS        0x01 // LiSendTouchEvent()/LiSendPenEvent() supported
 #define LI_FF_CONTROLLER_TOUCH_EVENTS 0x02 // LiSendControllerTouchEvent() supported
+#define LI_FF_TRACKPAD_EVENTS         0x04 // LiSendTrackpadEvent() supported (Vibeshine)
 uint32_t LiGetHostFeatureFlags(void);
 
 #ifdef __cplusplus

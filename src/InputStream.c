@@ -67,6 +67,7 @@ typedef struct _PACKET_HOLDER {
         SS_HSCROLL_PACKET hscroll;
         NV_HAPTICS_PACKET haptics;
         SS_TOUCH_PACKET touch;
+        SS_TRACKPAD_PACKET trackpad;
         SS_PEN_PACKET pen;
         SS_CONTROLLER_ARRIVAL_PACKET controllerArrival;
         SS_CONTROLLER_TOUCH_PACKET controllerTouch;
@@ -1407,6 +1408,58 @@ int LiSendTouchEvent(uint8_t eventType, uint32_t pointerId, float x, float y, fl
     floatToNetfloat(pressureOrDistance, holder->packet.touch.pressureOrDistance);
     floatToNetfloat(contactAreaMajor, holder->packet.touch.contactAreaMajor);
     floatToNetfloat(contactAreaMinor, holder->packet.touch.contactAreaMinor);
+
+    err = LbqOfferQueueItem(&packetQueue, holder, &holder->entry);
+    if (err != LBQ_SUCCESS) {
+        LC_ASSERT(err == LBQ_BOUND_EXCEEDED);
+        Limelog("Input queue reached maximum size limit\n");
+        freePacketHolder(holder);
+    }
+
+    return err;
+}
+
+int LiSendTrackpadEvent(uint8_t contactCount, const LI_TRACKPAD_CONTACT* contacts, float width, float height) {
+    static uint8_t lastCount;
+    PPACKET_HOLDER holder;
+    int err;
+
+    if (!initialized) {
+        return -2;
+    }
+
+    // This is a protocol extension only supported with Vibeshine
+    if (!(SunshineFeatureFlags & LI_FF_TRACKPAD_EVENTS)) {
+        return LI_ERR_UNSUPPORTED;
+    }
+
+    if (contactCount > SS_TRACKPAD_MAX_CONTACTS) {
+        contactCount = SS_TRACKPAD_MAX_CONTACTS;
+    }
+
+    holder = allocatePacketHolder(0);
+    if (holder == NULL) {
+        return -1;
+    }
+
+    holder->channelId = CTRL_CHANNEL_TOUCH;
+
+    // Frames that only move the same contacts can be dropped for a newer one;
+    // contacts arriving or lifting can't
+    holder->enetPacketFlags = contactCount == lastCount && contactCount != 0 ? 0 : ENET_PACKET_FLAG_RELIABLE;
+    lastCount = contactCount;
+
+    memset(&holder->packet.trackpad, 0, sizeof(holder->packet.trackpad));
+    holder->packet.trackpad.header.size = BE32(sizeof(SS_TRACKPAD_PACKET) - sizeof(uint32_t));
+    holder->packet.trackpad.header.magic = LE32(SS_TRACKPAD_MAGIC);
+    holder->packet.trackpad.contactCount = contactCount;
+    floatToNetfloat(width, holder->packet.trackpad.width);
+    floatToNetfloat(height, holder->packet.trackpad.height);
+    for (uint8_t i = 0; i < contactCount; i++) {
+        holder->packet.trackpad.contacts[i].contactId = LE32(contacts[i].contactId);
+        floatToNetfloat(contacts[i].x, holder->packet.trackpad.contacts[i].x);
+        floatToNetfloat(contacts[i].y, holder->packet.trackpad.contacts[i].y);
+    }
 
     err = LbqOfferQueueItem(&packetQueue, holder, &holder->entry);
     if (err != LBQ_SUCCESS) {
